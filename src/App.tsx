@@ -12,7 +12,7 @@ interface IProps {}
 let def  = new Array<string>();
 class App extends Component<IProps,IState> {
     state = {
-        gameState: {currentLocation: "intro"},
+        gameState: {currentLocation: "intro",benchQuestStarted:false,benchQuestCompleted:false},
         messages:def
     }
 
