@@ -7,15 +7,40 @@
   height: 40vmin;
 }
 
-.App-header {
+.App {
   background-color: #282c34;
   min-height: 100vh;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   font-size: calc(10px + 2vmin);
   color: white;
+}
+.Messages {
+    width: 100%;
+    height:50vw;
+    overflow-y: scroll;
+}
+.Actions {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    height: 10vh;
+}
+
+.Actions button {
+    flex: 1;
+
+}
+
+.Messages textarea {
+    background-color: pink;
+    text-align: center;
+    font-size: 2em;
+    width: 100%;
+    height: inherit;
 }
 
 .App-link {

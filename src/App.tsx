@@ -1,27 +1,49 @@
 import React, { Component } from 'react';
 import logo from './logo.svg';
 import './App.css';
-import {foo} from './lib/choose';
-foo()
+import * as choose from './lib/choose';
 
-class App extends Component {
+interface IState {
+    gameState: choose.State;
+    messages: Array<string>;
+}
+
+interface IProps {}
+let def  = new Array<string>();
+class App extends Component<IProps,IState> {
+    state = {
+        gameState: {currentLocation: "intro"},
+        messages:def
+    }
+
+    componentWillMount() {
+        const place:choose.Place = choose.currentPlace(this.state.gameState);
+        const msg  = place.describePlace(this.state.gameState);
+        this.state.messages.push(msg);
+    }
+
+    handleGameAction = (a:choose.Action) => {
+        const place:choose.Place = choose.currentPlace(this.state.gameState);
+        const [desc, s] = place.performAction(this.state.gameState, a);
+        this.state.messages.push(desc);
+        this.setState({...this.state, gameState:s});
+        const nextPlace:choose.Place = choose.currentPlace(s);
+        this.state.messages.push(nextPlace.describePlace(s));
+    }
+
   render() {
+    const place:choose.Place = choose.currentPlace(this.state.gameState);
+    const actions:Array<choose.Action> = place.possibleActions(this.state.gameState);
     return (
       <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <p>
-            Edit <code>src/App.tsx</code> and save to reload.
-          </p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
-        </header>
+          <div className="Messages">
+              <ul>
+              {this.state.messages.map(m => <li> {m}</li>)}
+              </ul>
+          </div>
+          <div className="Actions">
+              {actions.map(a => <button onClick = {() => this.handleGameAction(a)} > {a.name} </button>)}
+          </div>
       </div>
     );
   }

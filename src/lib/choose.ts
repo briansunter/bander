@@ -1,8 +1,8 @@
-interface State {
+export interface State {
   currentLocation: string;
 }
 
-interface Action {
+export interface Action {
   name: string;
 }
 
@@ -11,7 +11,7 @@ type possibleActions = (s: State) => Array<Action>;
 type actionEffect = [string, State];
 type performAction = (s: State, a: Action) => actionEffect;
 
-interface Place {
+export interface Place {
   id: string;
   describePlace: describePlace,
   possibleActions: possibleActions,
@@ -25,27 +25,22 @@ interface NavigationAction extends Action {
 }
 
 type enhanceNavigation = (p: Place, nas: Array<NavigationAction>) => Place;
-function compose2<T1 extends any[], T1R, T2>(f1: (...args1: T1) => T1R, f2: (arg: T1R) => T2) {
-  return (...a: T1) => f2(f1(...a));
-}
 
-let addNavigation: enhanceNavigation = (p, nas: Array<NavigationAction>) => {
+let addNavigation: enhanceNavigation = (p: Place, nas: Array<NavigationAction>): Place => {
   const navMessage: string = nas.map(n => `${n.description} "${n.name}"`).join("\n");
-  p.describePlace = compose2(p.describePlace, (ss) => ss.concat("\n", navMessage));
-  p.possibleActions = compose2(p.possibleActions, (ss) => ss.concat(nas));
-  // p.performAction = compose2(performNavActions, p.performAction);
-  let pa = p.performAction;
-
-  p.performAction = (s: State, a: Action) => {
-    let navAction = nas.filter(n => n.name === a.name).pop();
-    if (navAction) {
-      return [navAction!.moveDescription, { ...s, currentLocation: navAction!.nextLocation }];
-    } else {
-      return pa(s, a);
+  return {
+    id: p.id,
+    describePlace: s => p.describePlace(s).concat("\n", navMessage),
+    possibleActions: s => p.possibleActions(s).concat(nas),
+    performAction: (s, a) => {
+      let navAction = nas.filter(n => n.name === a.name).pop();
+      if (navAction) {
+        return [navAction!.moveDescription, { ...s, currentLocation: navAction!.nextLocation }];
+      } else {
+        return p.performAction(s, a);
+      }
     }
   }
-
-  return p;
 };
 
 
@@ -81,13 +76,33 @@ let southOfIntro: Place = addNavigation({
   },
 }, [{ name: "north", description: "There's a stone path going north to the intro", moveDescription: "You walk back north to the intro", nextLocation: "intro" }, { name: "west", description: "A dirt path going to the market to the west", moveDescription: "You walk to the market on the dirt path", nextLocation: "introMarket" }]);
 
-export function foo() {
-  let s = { currentLocation: "intro" };
-  console.log(intro.describePlace(s))
-  console.log(intro.possibleActions(s))
-  let [ad, st] = intro.performAction(s, { name: "south" });
-  console.log(southOfIntro.describePlace(st));
-  let [add, _] = southOfIntro.performAction(s, { name: "sit on bench" });
-  console.log("bench");
-  console.log(add);
+let introMarket: Place = addNavigation({
+  id: "introMarket",
+  describePlace: s => "Youre in a busting market",
+  possibleActions: s => [{ name: "sword vendor" }],
+  performAction: (s, a) => {
+    switch (a.name) {
+      case "sword vendor": {
+        return ["you visit the sword vendor", s]
+      }
+      default: {
+        return ["Not Found", s];
+      }
+    }
+  },
+}, [{ name: "east", description: "You walk on the dirt path back to the park", moveDescription: "You walk back north to the intro", nextLocation: "intro" }]);
+
+let places: Array<Place> = [intro, southOfIntro]
+
+export function placeById(id: string): Place {
+  return places.filter(n => n.id === id).pop()!;
+}
+
+export function currentPlace(state: State): Place {
+  return placeById(state.currentLocation);
+}
+
+interface Foo {
+  name: string;
+  say(): string;
 }
