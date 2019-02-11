@@ -12,21 +12,21 @@ type UpdateState = (s: State) => State;
 
 type NewState = State | UpdateState;
 
-interface ActionHook<T> {
+interface ActionHook {
   id: string;
-  requirements: Array<T>;
+  requirements: Array<State>;
   newState: NewState;
-  canSee?: (t: T) => boolean;
-  description: (t: T) => string;
-  actionDescription: (t: T) => string;
+  canSee?: (s: State) => boolean;
+  description: (s: State) => string;
+  actionDescription: (s: State) => string;
 }
 
 export let meetsRequirements = (s: State, reqs: Array<State>): boolean => _.every(reqs, r => _.isMatch(s, r));
 
-export let canSee = (s: State, a: ActionHook<State>): boolean => !a.canSee || a.canSee(s)
+export let canSee = (s: State, a: ActionHook): boolean => !a.canSee || a.canSee(s)
 
-export function runActionHooks(s: State, actionid: string, ahs: Array<ActionHook<State>>): Array<ActionEffect> {
-  const ahsForId: Array<ActionHook<State>> = ahs.filter(a => a.id === actionid).filter(a => canSee(s, a));
+export function runActionHooks(s: State, actionid: string, ahs: Array<ActionHook>): Array<ActionEffect> {
+  const ahsForId: Array<ActionHook> = ahs.filter(a => a.id === actionid).filter(a => canSee(s, a));
   var nextState: State = s;
   var effects = new Array<ActionEffect>();
 
@@ -46,11 +46,11 @@ export function runActionHooks(s: State, actionid: string, ahs: Array<ActionHook
   return effects;
 }
 
-export function describeActions(s: State, ahs: Array<ActionHook<State>>): string {
+export function describeActions(s: State, ahs: Array<ActionHook>): string {
   return ahs.filter(a => canSee(s, a)).map(a => `${a.id} : ${a.description(s)}`).join("\n");
 }
 
-export function possiblePlayerActions(s: State, ahs: Array<ActionHook<State>>): Array<PlayerAction> {
+export function possiblePlayerActions(s: State, ahs: Array<ActionHook>): Array<PlayerAction> {
   return ahs.filter(a => canSee(s, a)).map(a => {
     return {
       id: a.id,
@@ -63,10 +63,10 @@ export function possiblePlayerActions(s: State, ahs: Array<ActionHook<State>>): 
 export interface Area {
   id: string;
   description: (s: State) => string;
-  actionHooks: Array<ActionHook<State>>;
+  actionHooks: Array<ActionHook>;
 }
 
-export let nh: ActionHook<State> = {
+export let nh: ActionHook = {
   id: "south",
   requirements: [{ currentLocation: "introArea" }],
   newState: { currentLocation: "southOfIntro" },
@@ -74,7 +74,7 @@ export let nh: ActionHook<State> = {
   actionDescription: _ => "You walk south down the stone path"
 }
 
-export let nhs: ActionHook<State> = {
+export let nhs: ActionHook = {
   id: "north",
   requirements: [{ currentLocation: "southOfIntro" }],
   newState: { currentLocation: "introArea" },
@@ -82,7 +82,7 @@ export let nhs: ActionHook<State> = {
   actionDescription: _ => "You walk north up the stone path"
 }
 
-export let sitOnBench: ActionHook<State> = {
+export let sitOnBench: ActionHook = {
   id: "sit on bench",
   requirements: [{ currentLocation: "southOfIntro" }],
   newState: s => {
@@ -95,7 +95,7 @@ export let sitOnBench: ActionHook<State> = {
   actionDescription: s => !s.benchQuestStarted ? "You sit on the bench" : "You sit on the bench and feel a surge of energy.",
 }
 
-export let west: ActionHook<State> = {
+export let west: ActionHook = {
   id: "west",
   requirements: [{ currentLocation: "southOfIntro" }],
   newState: { currentLocation: "introMarket" },
@@ -103,7 +103,7 @@ export let west: ActionHook<State> = {
   actionDescription: _ => "You walk along the dirt path to the market"
 }
 
-export let east: ActionHook<State> = {
+export let east: ActionHook = {
   id: "east",
   requirements: [{ currentLocation: "introMarket" }],
   newState: { currentLocation: "southOfIntro" },
@@ -111,7 +111,7 @@ export let east: ActionHook<State> = {
   actionDescription: _ => "You walk east along the path back to the park."
 }
 
-export let talkToIntroGuy: ActionHook<State> = {
+export let talkToIntroGuy: ActionHook = {
   id: "talk intro guy",
   requirements: [{ currentLocation: "introMarket" }],
   newState: (s: State) => { if (!s.benchQuestStarted) { s.benchQuestStarted = true } return s; },
@@ -123,7 +123,6 @@ let introArea: Area = {
   id: "introArea",
   description: _ => "You're in the intro!",
   actionHooks: [nh]
-
 };
 
 let southOfIntroArea: Area = {

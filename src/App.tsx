@@ -11,6 +11,8 @@ interface IState {
 interface IProps {}
 let def  = new Array<string>();
 class App extends Component<IProps,IState> {
+    messagesEnd: React.RefObject<HTMLDivElement> = React.createRef()
+
     state = {
         gameState: {currentLocation: "introArea",benchQuestStarted:false,benchQuestCompleted:false},
         messages:def
@@ -20,6 +22,15 @@ class App extends Component<IProps,IState> {
         let areaDesc = choose.describeArea(this.state.gameState,choose.currentArea(this.state.gameState))
         this.state.messages.push(areaDesc);
     }
+
+    componentDidMount() {
+        this.scrollToBottom();
+    }
+
+    componentDidUpdate() {
+        this.scrollToBottom();
+    }
+
 
     actions():Array<choose.PlayerAction> {
         const p:choose.Area = choose.currentArea(this.state.gameState);
@@ -41,12 +52,19 @@ class App extends Component<IProps,IState> {
         this.setState({...this.state, gameState:{...this.state.gameState, ...nextState}});
     }
 
+    scrollToBottom = () => {
+        if (this.messagesEnd && this.messagesEnd.current && this.messagesEnd.current.scrollIntoView){
+            this.messagesEnd.current.scrollIntoView({ behavior: 'smooth' })
+        }
+    }
   render() {
       return (
       <div className="App">
           <div className="Messages">
               <ul>
               {this.state.messages.map(m => <li> {m}</li>)}
+                  <div ref={this.messagesEnd} />
+
               </ul>
           </div>
           <div className="Actions">
