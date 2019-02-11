@@ -20,6 +20,7 @@ class App extends Component<IProps,IState> {
         let areaDesc = choose.describeArea(this.state.gameState,choose.currentArea(this.state.gameState))
         this.state.messages.push(areaDesc);
     }
+
     actions():Array<choose.PlayerAction> {
         const p:choose.Area = choose.currentArea(this.state.gameState);
         const actions2:Array<choose.PlayerAction> = choose.possiblePlayerActions(this.state.gameState,p.actionHooks );
@@ -34,13 +35,10 @@ class App extends Component<IProps,IState> {
             this.state.messages.push(e[0]);
             nextState = e[1];
         }
-
-        this.setState({...this.state, gameState:{...this.state.gameState, ...nextState}});
-
         let areaDesc = choose.describeArea(nextState,choose.currentArea(nextState));
-        console.log(JSON.stringify(nextState));
         this.state.messages.push(areaDesc);
 
+        this.setState({...this.state, gameState:{...this.state.gameState, ...nextState}});
     }
 
   render() {
