@@ -1,148 +1,154 @@
 import * as _ from "lodash";
 
 interface BenchQuestState {
-  benchQuestStarted: boolean;
-  benchQuestCompleted: boolean;
+  benchQuestStarted?: boolean;
+  benchQuestCompleted?: boolean;
 }
 
 interface QuestState extends BenchQuestState {
 
 }
 
-export interface State extends QuestState {
+interface NavState {
   currentLocation: string;
 }
 
-export interface Action {
-  name: string;
-  description: string;
-  perform: (s: State) => actionEffect;
+export type SubState = NavState | QuestState;
+
+export interface State extends NavState, QuestState {
+
 }
 
-type describePlace = (s: State) => string;
-type possibleActions = (s: State) => Array<Action>;
-type actionEffect = [string, State];
-type performAction = (s: State, a: Action) => actionEffect;
+type ActionEffect = [string, State];
 
-export interface Place {
+interface ActionHook<T> {
   id: string;
-  describePlace: describePlace,
-  possibleActions: possibleActions,
-  performAction: performAction,
+  requirements: Array<T>;
+  newState: T;
+  canSee?: (t: T) => boolean;
+  description: (t: T) => string;
+  actionDescription: (t: T) => string;
 }
 
-interface NavigationAction extends Action {
-  nextLocation: string;
-}
 
-type enhanceNavigation = (p: Place, nas: Array<NavigationAction>) => Place;
 
-let addNavigation: enhanceNavigation = (p: Place, nas: Array<NavigationAction>): Place => {
-  // const navMessage: string = nas.map(n => `${n.description} "${n.name}"`).join("\n");
-  return {
-    id: p.id,
-    describePlace: p.describePlace,
-    possibleActions: s => p.possibleActions(s).concat(nas),
-    performAction: (s, a) => {
-      let navAction = nas.filter(n => n.name === a.name).pop();
-      if (navAction) {
-        return [navAction!.perform(s)[0], { ...s, currentLocation: navAction!.nextLocation }];
-      } else {
-        return p.performAction(s, a);
-      }
+export let meetsRequirements = (s: State, reqs: Array<SubState>): boolean => _.every(reqs, r => _.isMatch(s, r));
+
+export let canSee = (s: SubState, a: ActionHook<SubState>): boolean => !a.canSee || a.canSee(s)
+
+export function runActionHooks(s: State, actionid: string, ahs: Array<ActionHook<SubState>>): Array<ActionEffect> {
+  const ahsForId: Array<ActionHook<SubState>> = ahs.filter(a => a.id === actionid).filter(a => canSee(s, a));
+  var nextState: State = s;
+  var effects = new Array<ActionEffect>();
+
+  for (let ah of ahsForId) {
+    if (meetsRequirements(nextState, ah.requirements)) {
+      nextState = { ...nextState, ...ah.newState }
+      effects.push([ah.actionDescription(nextState), nextState]);
     }
   }
+  return effects;
+}
+
+export function describeActions(s: SubState, ahs: Array<ActionHook<SubState>>): string {
+  return ahs.filter(a => canSee(s, a)).map(a => `${a.id} : ${a.description(s)}`).join("\n");
+}
+
+export function possiblePlayerActions(s: State, ahs: Array<ActionHook<SubState>>): Array<PlayerAction> {
+  return ahs.filter(a => canSee(s, a)).map(a => {
+    return {
+      id: a.id,
+      description: a.description(s),
+      enabled: meetsRequirements(s, a.requirements)
+    }
+  });
+}
+
+export interface Area {
+  id: string;
+  description: (s: SubState) => string;
+  actionHooks: Array<ActionHook<SubState>>;
+}
+
+export let nh: ActionHook<SubState> = {
+  id: "south",
+  requirements: [{ currentLocation: "introArea" }],
+  newState: { currentLocation: "southOfIntro" },
+  description: _ => "There's a stone path going south",
+  actionDescription: _ => "You walk south down the stone path"
+}
+
+export let nhs: ActionHook<SubState> = {
+  id: "north",
+  requirements: [{ currentLocation: "southOfIntro" }],
+  newState: { currentLocation: "introArea" },
+  description: _ => "There's a stone path going north",
+  actionDescription: _ => "You walk north up the stone path"
+}
+
+export let sitOnBench: ActionHook<SubState> = {
+  id: "sit on bench",
+  requirements: [{ currentLocation: "southOfIntro" }],
+  newState: { currentLocation: "southOfIntro" },
+  description: _ => "Theres a nice bench",
+  actionDescription: _ => "You sit on the bench"
+}
+
+export let west: ActionHook<SubState> = {
+  id: "west",
+  requirements: [{ currentLocation: "southOfIntro" }],
+  newState: { currentLocation: "introMarket" },
+  description: _ => "There's a dirt path west to the market",
+  actionDescription: _ => "You walk along the dirt path to the market"
+}
+
+export let talkToIntroGuy: ActionHook<SubState> = {
+  id: "talk intro guy",
+  requirements: [{ currentLocation: "southOfIntro" }, { benchQuestStarted: false }],
+  newState: { benchQuestStarted: true },
+  description: _ => "There's a dirt path west to the market",
+  actionDescription: _ => "You walk along the dirt path to the market"
+}
+
+let ts: State = {
+  currentLocation: "intro",
+  benchQuestCompleted: false,
+  benchQuestStarted: false
 };
 
-function navPerformer(s: State, n: NavigationAction): actionEffect {
-  return [n.perform(s)[0], { ...s, currentLocation: n.nextLocation }]
-}
+let introArea: Area = {
+  id: "introArea",
+  description: _ => "You're in the intro!",
+  actionHooks: [nh]
 
-function makeNavAction(name: string, description: string, nextLocation: string): NavigationAction {
-  const moveDescription = `You moved ${name}, your new location is ${nextLocation} \n`;
-  return {
-    name,
-    description,
-    nextLocation,
-    perform: s => { return [moveDescription, { ...s, currentLocation: nextLocation }] }
-  }
-}
+};
 
-interface QuestAction<T> extends Action {
-  requirements: Array<T>;
-  appendState: T;
-}
-
-function makeQuestAction<T extends QuestState>(name: string, description: string, requirements: Array<T>, appendState: T, completeDescription: string, defaultEffect: string): QuestAction<T> {
-  let meetsRequirements = (s: State): boolean => _.every(requirements, r => _.isMatch(s, r));
-  return {
-    name,
-    requirements,
-    appendState,
-    description,
-    perform: (s: State) => {
-      if (meetsRequirements(s)) {
-        return [completeDescription, { ...s, ...appendState }];
-      } else {
-        return [defaultEffect, s];
-      }
-
-    }
-  }
-}
-
-let intro: Place = addNavigation({
-  id: "intro",
-  describePlace: s => "You started the game. There's a sign on the wall.",
-  possibleActions: s => [{
-    name: "read sign",
-    description: "There is a weathered sign to the side",
-    perform: s => ["You read the sign. it says to go south", s]
-  }],
-  performAction: (s, a) => a.perform(s)
-},
-  [makeNavAction("south", "There's a stone path leading south.", "southOfIntro")])
-
-
-let benchQuest =
-  makeQuestAction<BenchQuestState>("sit on bench",
-    "A cool looking bench",
-    [{ benchQuestStarted: true, benchQuestCompleted: false }],
-    { benchQuestStarted: true, benchQuestCompleted: true },
-    "You feel a glow of energy. return to intro guy",
-    "The bench is comfy, but nothing interesting happens yet...");
-
-let southOfIntro: Place = addNavigation({
+let southOfIntroArea: Area = {
   id: "southOfIntro",
-  describePlace: _ => "You're in a nice park. There's a bench",
-  possibleActions: _ => [benchQuest],
-  performAction: (s, a) => a.perform(s),
-},
-  [makeNavAction("north", "There's a stone path going north to the intro", "intro"),
-  makeNavAction("west", "A dirt path going to the market to the west", "introMarket")]);
+  description: _ => "You're in a nice park to the south",
+  actionHooks: [nhs, sitOnBench]
 
-let introMarket: Place = addNavigation({
+};
+
+let introMarketArea: Area = {
   id: "introMarket",
-  describePlace: s => "You're in a busting market",
-  possibleActions: s => [{
-    name: "talk to intro person", description: "This person will give you your first quest", perform: s => {
-      if (s.benchQuestCompleted) {
-        return ["Congratulations on completing your first quest!", s]
-      } else {
-        return ["Your first quest is to sit on the bench and see what happens!", { ...s, benchQuestStarted: true }]
-      }
-    }
-  }],
-  performAction: (s, a) => a.perform(s),
-},
-  [makeNavAction("east", "You walk on the dirt path back to the park", "southOfIntro")]);
+  description: _ => "You're in a bustling market",
+  actionHooks: [nhs, sitOnBench]
 
-let places: Array<Place> = [intro, southOfIntro, introMarket]
+};
 
-export function placeById(id: string): Place {
-  return places.filter(n => n.id === id).pop()!;
+export interface PlayerAction {
+  id: string;
+  description: string;
+  enabled: boolean;
 }
 
-export function currentPlace(state: State): Place {
-  return placeById(state.currentLocation);
+export let allPlaces: _.Dictionary<Area> = _.mapValues(_.groupBy([introArea, southOfIntroArea], 'id'), v => v[0]);
+
+export function currentArea(s: NavState): Area {
+  return allPlaces[s.currentLocation];
+}
+
+export function describeArea(s: SubState, a: Area): string {
+  return `You're in ${a.id} \n ${a.description(s)} \n ${describeActions(s, a.actionHooks)}`
 }

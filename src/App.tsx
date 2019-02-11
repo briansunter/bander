@@ -12,29 +12,39 @@ interface IProps {}
 let def  = new Array<string>();
 class App extends Component<IProps,IState> {
     state = {
-        gameState: {currentLocation: "intro",benchQuestStarted:false,benchQuestCompleted:false},
+        gameState: {currentLocation: "introArea",benchQuestStarted:false,benchQuestCompleted:false},
         messages:def
     }
 
     componentWillMount() {
-        const place:choose.Place = choose.currentPlace(this.state.gameState);
-        const msg  = place.describePlace(this.state.gameState);
-        this.state.messages.push(msg);
+        let areaDesc = choose.describeArea(this.state.gameState,choose.currentArea(this.state.gameState))
+        this.state.messages.push(areaDesc);
+    }
+    actions():Array<choose.PlayerAction> {
+        const p:choose.Area = choose.currentArea(this.state.gameState);
+        const actions2:Array<choose.PlayerAction> = choose.possiblePlayerActions(this.state.gameState,p.actionHooks );
+        return actions2;
     }
 
-    handleGameAction = (a:choose.Action) => {
-        const place:choose.Place = choose.currentPlace(this.state.gameState);
-        const [desc, s] = place.performAction(this.state.gameState, a);
-        this.state.messages.push(desc);
-        this.setState({...this.state, gameState:s});
-        const nextPlace:choose.Place = choose.currentPlace(s);
-        this.state.messages.push(nextPlace.describePlace(s));
+    handleGameAction = (a:choose.PlayerAction) => {
+        const area = choose.currentArea(this.state.gameState);
+        const effects  = choose.runActionHooks(this.state.gameState,a.id,area.actionHooks);
+        var nextState: choose.State = this.state.gameState;
+        for (var e of effects) {
+            this.state.messages.push(e[0]);
+            nextState = e[1];
+        }
+
+        this.setState({...this.state, gameState:{...this.state.gameState, ...nextState}});
+
+        let areaDesc = choose.describeArea(nextState,choose.currentArea(nextState));
+        console.log(JSON.stringify(nextState));
+        this.state.messages.push(areaDesc);
+
     }
 
   render() {
-    const place:choose.Place = choose.currentPlace(this.state.gameState);
-    const actions:Array<choose.Action> = place.possibleActions(this.state.gameState);
-    return (
+      return (
       <div className="App">
           <div className="Messages">
               <ul>
@@ -42,7 +52,7 @@ class App extends Component<IProps,IState> {
               </ul>
           </div>
           <div className="Actions">
-              {actions.map(a => <button onClick = {() => this.handleGameAction(a)} > {a.name} </button>)}
+              {this.actions().map(a => <button onClick = {() => this.handleGameAction(a)} disabled = {! a.enabled}> {a.id + a.description} </button>)}
           </div>
       </div>
     );
