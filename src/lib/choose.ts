@@ -12,7 +12,7 @@ type UpdateState = (s: State) => State;
 
 type NewState = State | UpdateState;
 
-interface ActionHook {
+export interface ActionHook {
   id: string;
   requirements: Array<State>;
   newState: NewState;
@@ -21,9 +21,13 @@ interface ActionHook {
   actionDescription: (s: State) => string;
 }
 
-export let meetsRequirements = (s: State, reqs: Array<State>): boolean => _.every(reqs, r => _.isMatch(s, r));
+export function meetsRequirements(s: State, reqs: Array<State>): boolean {
+  return _.every(reqs, r => _.isMatch(s, r));
+}
 
-export let canSee = (s: State, a: ActionHook): boolean => !a.canSee || a.canSee(s)
+export function canSee(s: State, a: ActionHook): boolean {
+  return !a.canSee || a.canSee(s)
+}
 
 export function runActionHooks(s: State, actionid: string, ahs: Array<ActionHook>): Array<ActionEffect> {
   const ahsForId: Array<ActionHook> = ahs.filter(a => a.id === actionid).filter(a => canSee(s, a));
@@ -36,13 +40,14 @@ export function runActionHooks(s: State, actionid: string, ahs: Array<ActionHook
       newState = ah.newState(nextState);
     } else {
       newState = ah.newState;
-
     }
+
     if (meetsRequirements(nextState, ah.requirements)) {
       nextState = { ...nextState, ...newState }
       effects.push([ah.actionDescription(nextState), nextState]);
     }
   }
+
   return effects;
 }
 
@@ -66,88 +71,15 @@ export interface Area {
   actionHooks: Array<ActionHook>;
 }
 
-export let nh: ActionHook = {
-  id: "south",
-  requirements: [{ currentLocation: "introArea" }],
-  newState: { currentLocation: "southOfIntro" },
-  description: _ => "There's a stone path going south",
-  actionDescription: _ => "You walk south down the stone path"
-}
-
-export let nhs: ActionHook = {
-  id: "north",
-  requirements: [{ currentLocation: "southOfIntro" }],
-  newState: { currentLocation: "introArea" },
-  description: _ => "There's a stone path going north",
-  actionDescription: _ => "You walk north up the stone path"
-}
-
-export let sitOnBench: ActionHook = {
-  id: "sit on bench",
-  requirements: [{ currentLocation: "southOfIntro" }],
-  newState: s => {
-    if (s.benchQuestStarted) {
-      return { currentLocation: "southOfIntro", benchQuestCompleted: true }
-    }
-    else { return { currentLocation: "southOfIntro" } }
-  },
-  description: s => (!s.benchQuestStarted || s.benchQuestCompleted) ? "Theres a nice bench" : "The bench has a strange glow...",
-  actionDescription: s => !s.benchQuestStarted ? "You sit on the bench" : "You sit on the bench and feel a surge of energy.",
-}
-
-export let west: ActionHook = {
-  id: "west",
-  requirements: [{ currentLocation: "southOfIntro" }],
-  newState: { currentLocation: "introMarket" },
-  description: _ => "There's a dirt path west to the market",
-  actionDescription: _ => "You walk along the dirt path to the market"
-}
-
-export let east: ActionHook = {
-  id: "east",
-  requirements: [{ currentLocation: "introMarket" }],
-  newState: { currentLocation: "southOfIntro" },
-  description: _ => "There's a dirt path east leading back to the park",
-  actionDescription: _ => "You walk east along the path back to the park."
-}
-
-export let talkToIntroGuy: ActionHook = {
-  id: "talk intro guy",
-  requirements: [{ currentLocation: "introMarket" }],
-  newState: (s: State) => { if (!s.benchQuestStarted) { s.benchQuestStarted = true } return s; },
-  description: s => !s.benchQuestStarted ? "This guy looks like he has a quest" : "Talk to him after sitting on bench",
-  actionDescription: s => !s.benchQuestCompleted ? "You talk to the intro guy. he says sit on the bench" : "Congrats on finishing your first quest!"
-}
-
-let introArea: Area = {
-  id: "introArea",
-  description: _ => "You're in the intro!",
-  actionHooks: [nh]
-};
-
-let southOfIntroArea: Area = {
-  id: "southOfIntro",
-  description: _ => "You're in a nice park to the south",
-  actionHooks: [nhs, sitOnBench, west]
-
-};
-
-let introMarketArea: Area = {
-  id: "introMarket",
-  description: _ => "You're in a bustling market",
-  actionHooks: [talkToIntroGuy, east]
-
-};
-
 export interface PlayerAction {
   id: string;
   description: string;
   enabled: boolean;
 }
 
-export let allPlaces: _.Dictionary<Area> = _.mapValues(_.groupBy([introArea, southOfIntroArea, introMarketArea], 'id'), v => v[0]);
 
-export function currentArea(s: State): Area {
+export function currentArea(s: State, areas: Array<Area>): Area {
+  let allPlaces: _.Dictionary<Area> = _.mapValues(_.groupBy(areas, 'id'), v => v[0]);
   return allPlaces[s.currentLocation];
 }
 
