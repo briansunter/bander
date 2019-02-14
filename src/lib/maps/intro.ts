@@ -16,19 +16,23 @@ export let nhs: ActionHook = {
   actionDescription: _ => "You walk north up the stone path"
 }
 
-export let sitOnBench: ActionHook = {
+export let sitOnBenchNotStarted: ActionHook = {
   id: "sit on bench",
-  requirements: [{ currentLocation: "southOfIntro" }],
-  newState: s => {
-    if (s.benchQuestStarted) {
-      return { currentLocation: "southOfIntro", benchQuestCompleted: true }
-    }
-    else { return { currentLocation: "southOfIntro" } }
-  },
-  description: s => (!s.benchQuestStarted || s.benchQuestCompleted) ? "Theres a nice bench" : "The bench has a strange glow...",
-  actionDescription: s => !s.benchQuestStarted ? "You sit on the bench" : "You sit on the bench and feel a surge of energy.",
+  requirements: [{ currentLocation: "southOfIntro", benchQuestStarted: false }],
+  canSee: s => s.benchQuestStarted === false,
+  newState: { currentLocation: "southOfIntro" },
+  description: _ => "Theres a nice bench",
+  actionDescription: _ => "You sit on the bench"
 }
 
+export let sitOnBenchStarted: ActionHook = {
+  id: "sit on bench",
+  requirements: [{ currentLocation: "southOfIntro", benchQuestStarted: true }],
+  canSee: s => s.benchQuestStarted === true,
+  newState: { currentLocation: "southOfIntro", benchQuestCompleted: true },
+  description: _ => "The bench has a strange glow...",
+  actionDescription: _ => "You sit on the bench and feel a surge of energy."
+}
 export let west: ActionHook = {
   id: "west",
   requirements: [{ currentLocation: "southOfIntro" }],
@@ -53,6 +57,28 @@ export let talkToIntroGuy: ActionHook = {
   actionDescription: s => !s.benchQuestCompleted ? "You talk to the intro guy. he says sit on the bench" : "Congrats on finishing your first quest!"
 }
 
+export let swordShop: ActionHook = {
+  id: "enter sword shop",
+  requirements: [{ currentLocation: "introMarket" }],
+  newState: { currentLocation: "swordShop" },
+  description: _ => "A shop where you can buy swords",
+  actionDescription: _ => "You enter the sword shop"
+}
+
+export let backToMarket: ActionHook = {
+  id: "back to market",
+  requirements: [{ currentLocation: "swordShop" }],
+  newState: { currentLocation: "introMarket" },
+  description: _ => "Leave the sword shop",
+  actionDescription: _ => "you leave the sword shop"
+}
+
+let swordShopArea: Area = {
+  id: "swordShop",
+  description: _ => "Inside a shop filled with pointy things",
+  actionHooks: [backToMarket]
+};
+
 let introArea: Area = {
   id: "introArea",
   description: _ => "You're in the intro!",
@@ -62,13 +88,13 @@ let introArea: Area = {
 let southOfIntroArea: Area = {
   id: "southOfIntro",
   description: _ => "You're in a nice park to the south",
-  actionHooks: [nhs, sitOnBench, west]
+  actionHooks: [nhs, sitOnBenchStarted, sitOnBenchNotStarted, west]
 };
 
 let introMarketArea: Area = {
   id: "introMarket",
   description: _ => "You're in a bustling market",
-  actionHooks: [talkToIntroGuy, east]
+  actionHooks: [talkToIntroGuy, east, swordShop]
 };
 
-export let introAreas = [introArea, southOfIntroArea, introMarketArea]
+export let introAreas = [introArea, southOfIntroArea, introMarketArea, swordShopArea]

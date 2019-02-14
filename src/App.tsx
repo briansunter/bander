@@ -22,7 +22,7 @@ const ActionButton = (p:ABProps) =>
         <p> {p.description} </p>
     </button>;
 
-class App extends Component<{},IState> {
+class App extends Component<{}, IState> {
     messagesEnd: React.RefObject<HTMLDivElement> = React.createRef()
 
     state:IState = {
