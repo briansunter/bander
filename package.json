@@ -17,7 +17,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "build:pages": "react-scripts build && cp -R public/ docs/",
+    "build:pages": "react-scripts build && cp -R build/ docs/",
     "test": "react-scripts test"
   },
   "eslintConfig": {
