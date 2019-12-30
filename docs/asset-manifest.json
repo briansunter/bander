@@ -1,13 +1,13 @@
 {
-  "main.css": "/static/css/main.5a8cede0.chunk.css",
-  "main.js": "/static/js/main.272c9a73.chunk.js",
-  "main.js.map": "/static/js/main.272c9a73.chunk.js.map",
-  "static/js/1.502e314a.chunk.js": "/static/js/1.502e314a.chunk.js",
-  "static/js/1.502e314a.chunk.js.map": "/static/js/1.502e314a.chunk.js.map",
-  "runtime~main.js": "/static/js/runtime~main.229c360f.js",
-  "runtime~main.js.map": "/static/js/runtime~main.229c360f.js.map",
-  "static/css/main.5a8cede0.chunk.css.map": "/static/css/main.5a8cede0.chunk.css.map",
-  "index.html": "/index.html",
-  "precache-manifest.2a97c38774df62176915d227bece9d9b.js": "/precache-manifest.2a97c38774df62176915d227bece9d9b.js",
-  "service-worker.js": "/service-worker.js"
+  "main.css": "/bander/static/css/main.5a8cede0.chunk.css",
+  "main.js": "/bander/static/js/main.20019900.chunk.js",
+  "main.js.map": "/bander/static/js/main.20019900.chunk.js.map",
+  "static/js/1.502e314a.chunk.js": "/bander/static/js/1.502e314a.chunk.js",
+  "static/js/1.502e314a.chunk.js.map": "/bander/static/js/1.502e314a.chunk.js.map",
+  "runtime~main.js": "/bander/static/js/runtime~main.981fa81c.js",
+  "runtime~main.js.map": "/bander/static/js/runtime~main.981fa81c.js.map",
+  "static/css/main.5a8cede0.chunk.css.map": "/bander/static/css/main.5a8cede0.chunk.css.map",
+  "index.html": "/bander/index.html",
+  "precache-manifest.b9f8f01b8e3e0b1acb914356baa53c21.js": "/bander/precache-manifest.b9f8f01b8e3e0b1acb914356baa53c21.js",
+  "service-worker.js": "/bander/service-worker.js"
 }

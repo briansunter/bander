@@ -1,5 +1,6 @@
 {
   "name": "bander",
+  "homepage" : "http://briansunter.github.io/bander",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -18,7 +19,9 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "build:pages": "react-scripts build && cp -R build/ docs/",
-    "test": "react-scripts test"
+    "test": "react-scripts test",
+      "predeploy": "npm run build",
+      "deploy": "gh-pages -d build"
   },
   "eslintConfig": {
     "extends": "react-app"
